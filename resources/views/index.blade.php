@@ -886,16 +886,81 @@
     </div>
     </div>
     <script>
-        const namaKebunTerbaik = @json($namaKebunTerbaik);
-        const persenTerbaik = @json($persenTerbaik);
-        const pkkNormal = @json($pkkNormal);
-        const pkkNonvaluer = @json($pkkNonvaluer);
-        const pkkMati = @json($pkkMati);
+        const peringkatKondisiPohonChartData = @json($peringkatKondisiPohonChartData);
+        const
+            namaKebunTerbaik = peringkatKondisiPohonChartData.map(item =>
+                item.kebun);
+        const persen_pkk_normal = peringkatKondisiPohonChartData.map(item => item.normal);
+        const persen_pkk_non_valuer = peringkatKondisiPohonChartData.map(item => item
+            .non_valuer);
+        const persen_pkk_mati = peringkatKondisiPohonChartData.map(item => item.mati);
 
-        const kacangan = @json($kacangan);
-        const pemeliharaanKurangBaik = @json($pemeliharaanKurangBaik);
-        const arealTergenang = @json($arealTergenang);
-        const anakKayu = @json($anakKayu);
+        // Simpan semua data asli
+        const allKondisiData = peringkatKondisiPohonChartData.map(item => ({
+            kebun: item.kebun,
+            normal: item.normal,
+            non_valuer: item.non_valuer,
+            mati: item.mati
+        }));
+
+        function getSortedSeries(byField) {
+            const sorted = [...allKondisiData].sort((a, b) => b[byField] - a[byField]);
+            return {
+                categories: sorted.map(d => d.kebun),
+                series: [{
+                        name: 'PKK NORMAL',
+                        data: sorted.map(d => d.normal)
+                    },
+                    {
+                        name: 'PKK NON VALUER',
+                        data: sorted.map(d => d.non_valuer)
+                    },
+                    {
+                        name: 'PKK MATI',
+                        data: sorted.map(d => d.mati)
+                    }
+                ]
+            };
+        }
+
+        const peringkatPemeliharaanChartData = @json($peringkatPemeliharaanChartData);
+        const namaKebunPemeliharaan = peringkatPemeliharaanChartData.map(item => item.kebun);
+        const persen_tutupan_kacangan = peringkatPemeliharaanChartData.map(item => item.kacangan);
+        const persen_pir_pkk_kurang_baik = peringkatPemeliharaanChartData.map(item => item.pemeliharaan);
+        const persen_area_tergenang = peringkatPemeliharaanChartData.map(item => item.tergenang);
+        const kondisi_anak_kayu = peringkatPemeliharaanChartData.map(item => item.anak_kayu);
+
+        const allPemeliharaanData = peringkatPemeliharaanChartData.map(item => ({
+            kebun: item.kebun,
+            kacangan: item.kacangan,
+            pemeliharaan: item.pemeliharaan,
+            tergenang: item.tergenang,
+            anak_kayu: item.anak_kayu
+        }));
+
+        function getSortedPemeliharaanSeries(byField) {
+            const sorted = [...allPemeliharaanData].sort((a, b) => b[byField] - a[byField]);
+            return {
+                categories: sorted.map(d => d.kebun),
+                series: [{
+                        name: 'Kacangan',
+                        data: sorted.map(d => d.kacangan)
+                    },
+                    {
+                        name: 'Pemeliharaan Kurang Baik',
+                        data: sorted.map(d => d.pemeliharaan)
+                    },
+                    {
+                        name: 'Areal Tergenang',
+                        data: sorted.map(d => d.tergenang)
+                    },
+                    {
+                        name: 'Anak Kayu',
+                        data: sorted.map(d => d.anak_kayu)
+                    }
+                ]
+            };
+        }
 
         const komposisiLabels = @json($komposisiLabels);
         const komposisiSeries = @json($komposisiSeries);
@@ -1022,21 +1087,40 @@
                     return {
                         series: [{
                                 name: 'PKK NORMAL',
-                                data: pkkNormal
+                                data: persen_pkk_normal
                             },
                             {
                                 name: 'PKK NON VALUER',
-                                data: pkkNonvaluer
+                                data: persen_pkk_non_valuer
                             },
                             {
                                 name: 'PKK MATI',
-                                data: pkkMati
+                                data: persen_pkk_mati
                             }
                         ],
                         chart: {
                             type: 'bar',
                             height: namaKebunTerbaik.length * 30 + 100,
                             stacked: true,
+                            events: {
+                                legendClick: function(chartContext, seriesIndex) {
+                                    const fieldMap = ['normal', 'non_valuer', 'mati'];
+                                    const selectedField = fieldMap[seriesIndex];
+                                    const {
+                                        categories,
+                                        series
+                                    } = getSortedSeries(selectedField);
+
+                                    chartContext.updateOptions({
+                                        xaxis: {
+                                            categories
+                                        },
+                                        series: series
+                                    });
+
+                                    return false;
+                                }
+                            },
                             toolbar: {
                                 show: true,
                                 offsetX: -20,
@@ -1070,7 +1154,7 @@
                         dataLabels: {
                             enabled: true,
                             formatter: function(val) {
-                                return val >= 3 ? `${val}%` : ''; // tampilkan hanya jika ≥ 3%
+                                return val >= 2 ? `${parseFloat(val).toFixed(2)}%` : '';
                             },
                             style: {
                                 fontSize: '12px',
@@ -1156,7 +1240,7 @@
                             intersect: false,
                             y: {
                                 formatter: function(val) {
-                                    return `${val}%`;
+                                    return `${parseFloat(val).toFixed(2)}%`;
                                 }
                             },
                             style: {
@@ -1185,25 +1269,44 @@
                     return {
                         series: [{
                                 name: 'Kacangan',
-                                data: kacangan
+                                data: persen_tutupan_kacangan
                             },
                             {
-                                name: 'Pemeliharaan yang Kurang Baik',
-                                data: pemeliharaanKurangBaik
+                                name: 'Pemeliharaan Kurang Baik',
+                                data: persen_pir_pkk_kurang_baik
                             },
                             {
                                 name: 'Areal Tergenang',
-                                data: arealTergenang
+                                data: persen_area_tergenang
                             },
                             {
                                 name: 'Anak Kayu',
-                                data: anakKayu
+                                data: kondisi_anak_kayu
                             }
                         ],
                         chart: {
                             type: 'bar',
-                            height: namaKebunTerbaik.length * 30 + 100,
+                            height: namaKebunPemeliharaan.length * 30 + 100,
                             stacked: true,
+                            events: {
+                                legendClick: function(chartContext, seriesIndex) {
+                                    const fieldMap = ['kacangan', 'pemeliharaan', 'tergenang',
+                                        'anak_kayu'
+                                    ];
+                                    const selectedField = fieldMap[seriesIndex];
+                                    const {
+                                        categories,
+                                        series
+                                    } = getSortedPemeliharaanSeries(selectedField);
+                                    chartContext.updateOptions({
+                                        xaxis: {
+                                            categories
+                                        },
+                                        series
+                                    });
+                                    return false;
+                                }
+                            },
                             toolbar: {
                                 show: true,
                                 offsetX: -20,
@@ -1236,9 +1339,7 @@
                         },
                         dataLabels: {
                             enabled: true,
-                            formatter: function(val) {
-                                return val >= 7 ? `${val}%` : ''; // tampilkan hanya jika ≥ 3%
-                            },
+                            formatter: val => val >= 2 ? `${parseFloat(val).toFixed(2)}%` : '',
                             style: {
                                 fontSize: '12px',
                                 colors: ['#ffffff']
@@ -1252,7 +1353,7 @@
                             }
                         },
                         xaxis: {
-                            categories: namaKebunTerbaik,
+                            categories: namaKebunPemeliharaan,
                             min: 0,
                             max: 100,
                             title: {
@@ -1271,18 +1372,7 @@
                             }
                         },
                         yaxis: {
-                            title: {
-                                style: {
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    color: '#666'
-                                }
-                            },
                             labels: {
-                                show: true,
-                                align: 'right',
-                                minWidth: 100,
-                                maxWidth: 200,
                                 style: {
                                     fontSize: '12px',
                                     colors: '#34495e'
@@ -1322,29 +1412,12 @@
                             shared: true,
                             intersect: false,
                             y: {
-                                formatter: function(val) {
-                                    return `${val}%`;
-                                }
+                                formatter: val => `${parseFloat(val).toFixed(2)}%`
                             },
                             style: {
                                 fontSize: '13px'
                             }
-                        },
-                        responsive: [{
-                            breakpoint: 768,
-                            options: {
-                                chart: {
-                                    height: namaKebunTerbaik.length * 30 + 150
-                                },
-                                yaxis: {
-                                    labels: {
-                                        style: {
-                                            fontSize: '10px'
-                                        }
-                                    }
-                                }
-                            }
-                        }]
+                        }
                     };
                 },
 
@@ -1358,7 +1431,16 @@
                             offsetY: -15,
                         },
                         dataLabels: {
-                            enabled: false
+                            enabled: true,
+                            formatter: function(val, opts) {
+                                const value = opts.w.config.series[opts.seriesIndex];
+                                return value + '%';
+                            },
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                colors: ['#FFF']
+                            }
                         },
                         stroke: {
                             show: true,
@@ -1366,18 +1448,21 @@
                             colors: ['#fff']
                         },
                         colors: [
-                            '#4E79A7', // biru tua
-                            '#F28E2B', // oranye terang
-                            '#E15759', // merah coral
-                            '#76B7B2', // hijau toska lembut
-                            '#59A14F', // hijau daun
-                            '#EDC948', // kuning keemasan
-                            '#B07AA1', // ungu pastel
-                            '#FF9DA7', // pink muda
-                            '#9C755F', // coklat kayu
-                            '#BAB0AC', // abu-abu medium
-                            '#86BCB6' // hijau kebiruan
+                            '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
+                            '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC', '#86BCB6'
                         ],
+                        tooltip: {
+                            shared: true,
+                            intersect: false,
+                            y: {
+                                formatter: function(val) {
+                                    return `${val}%`;
+                                }
+                            },
+                            style: {
+                                fontSize: '13px'
+                            }
+                        },
                         legend: {
                             position: 'bottom',
                             fontSize: '14px',
@@ -1412,15 +1497,17 @@
                                             show: true,
                                             fontSize: '26px',
                                             offsetY: 16,
-                                            formatter: val => val
+                                            formatter: val => val + '%'
                                         },
                                         total: {
                                             show: true,
                                             label: 'Total',
                                             fontSize: '29px',
-                                            formatter: w => w.globals.seriesTotals.reduce((a,
-                                                    b) =>
-                                                a + b, 0)
+                                            formatter: function(w) {
+                                                const lastValue = w.config.series[w.config
+                                                    .series.length - 1];
+                                                return lastValue + '%';
+                                            }
                                         }
                                     }
                                 }

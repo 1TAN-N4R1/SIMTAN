@@ -8,6 +8,7 @@ use App\Models\DetailAreal;
 use App\Models\LokasiKebun;
 use App\Models\LinkKebunTBM;
 use App\Helpers\ExcelDataHelper;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class ChartDataService
@@ -17,19 +18,20 @@ class ChartDataService
      */
     public function getPeringkatKondisiPohonData()
     {
-        $rekap = DetailRekap::where('is_total', true)
-            ->orderBy('kebun')
+        // Ambil langsung data urut berdasarkan persen_pkk_normal tertinggi
+        $data = DetailRekap::where('is_total', true)
+            ->orderByDesc('persen_pkk_normal')
             ->get(['kebun', 'persen_pkk_normal', 'persen_pkk_non_valuer', 'persen_pkk_mati']);
 
-        $rekapTerbaik = $rekap->sortByDesc('persen_pkk_normal')->values();
+        Log::info('🔍 Data kondisi pohon:', $data->map(function ($item) {
+            return [
+                'kebun' => $item->kebun,
+                'normal' => $item->persen_pkk_normal,
+            ];
+        })->toArray());
 
-        return [
-            'namaKebunTerbaik' => $rekapTerbaik->pluck('kebun'),
-            'persenTerbaik' => $rekapTerbaik->pluck('persen_pkk_normal')->map(fn($v) => round($v, 2)),
-            'pkkNormal' => $rekapTerbaik->pluck('persen_pkk_normal'),
-            'pkkNonvaluer' => $rekapTerbaik->pluck('persen_pkk_non_valuer')->map(fn($v) => round($v, 2)),
-            'pkkMati' => $rekapTerbaik->pluck('persen_pkk_mati'),
-        ];
+        // Kirim ke helper untuk formatting data
+        return ExcelDataHelper::formatKondisiPohonData($data);
     }
 
     /**
@@ -37,47 +39,19 @@ class ChartDataService
      */
     public function getPeringkatPemeliharaanData()
     {
+        // Ambil data total per kebun, urutkan dari kacangan tertinggi
         $data = DetailRekap::where('is_total', true)
-            ->orderBy('kebun')
-            ->get([
-                'kebun',
-                'persen_tutupan_kacangan',
-                'persen_pir_pkk_kurang_baik',
-                'persen_area_tergenang',
-                'kondisi_anak_kayu',
-            ]);
+            ->orderByDesc('persen_tutupan_kacangan')
+            ->get(['kebun', 'persen_tutupan_kacangan', 'persen_pir_pkk_kurang_baik', 'persen_area_tergenang', 'kondisi_anak_kayu']);
 
-        if ($data->isEmpty()) return [];
+        Log::info('📊 Data pemeliharaan:', $data->map(function ($item) {
+            return [
+                'kebun' => $item->kebun,
+                'kacangan' => $item->persen_tutupan_kacangan,
+            ];
+        })->toArray());
 
-        $maxTutupanKacangan = $data->max('persen_tutupan_kacangan');
-        $minPirPKKKurangBaik = $data->min('persen_pir_pkk_kurang_baik');
-        $minAreaTergenang = $data->min('persen_area_tergenang');
-        $minKondisiAnakKayu = $data->min('kondisi_anak_kayu');
-
-        foreach ($data as $item) {
-            $normTutupanKacangan = $maxTutupanKacangan > 0 ? $item->persen_tutupan_kacangan / $maxTutupanKacangan : 0;
-            $normPirPKKKurangBaik = ($item->persen_pir_pkk_kurang_baik > 0 && $minPirPKKKurangBaik > 0) ? $minPirPKKKurangBaik / $item->persen_pir_pkk_kurang_baik : 1;
-            $normAreaTergenang = ($item->persen_area_tergenang > 0 && $minAreaTergenang > 0) ? $minAreaTergenang / $item->persen_area_tergenang : 1;
-            $normKondisiAnakKayu = ($item->kondisi_anak_kayu > 0 && $minKondisiAnakKayu > 0) ? $minKondisiAnakKayu / $item->kondisi_anak_kayu : 1;
-
-            $item->score = round(
-                $normTutupanKacangan * 0.4 +
-                    $normPirPKKKurangBaik * 0.25 +
-                    $normAreaTergenang * 0.2 +
-                    $normKondisiAnakKayu * 0.15,
-                4
-            );
-        }
-
-        $sorted = $data->sortByDesc('score')->values();
-
-        return [
-            'namaKebunTerbaik' => $sorted->pluck('kebun'),
-            'kacangan' => $sorted->pluck('persen_tutupan_kacangan'),
-            'pemeliharaanKurangBaik' => $sorted->pluck('persen_pir_pkk_kurang_baik')->map(fn($v) => round($v, 2)),
-            'arealTergenang' => $sorted->pluck('persen_area_tergenang'),
-            'anakKayu' => $sorted->pluck('kondisi_anak_kayu')->map(fn($v) => round($v, 2)),
-        ];
+        return ExcelDataHelper::formatPemeliharaanData($data);
     }
 
     /**

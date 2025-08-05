@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ExcelDataHelper
@@ -58,6 +59,50 @@ class ExcelDataHelper
             'distrik' => $namaDistrik[$kodeDistrik] ?? $kodeDistrik,
             'luas' => $luas,
             'kode_kebun' => $kodeKebun,
+        ];
+    }
+
+    /**
+     * Data peringkat kondisi pohon (chart peringkatKondisiPohonChart)
+     */
+    public static function formatKondisiPohonData(Collection $data): array
+    {
+        $formatted = $data->map(function ($item) {
+            return [
+                'kebun' => $item->kebun,
+                'normal' => $item->persen_pkk_normal,
+                'non_valuer' => $item->persen_pkk_non_valuer,
+                'mati' => $item->persen_pkk_mati,
+            ];
+        })->values();
+
+        Log::info('✅ Formatted data:', $formatted->toArray());
+
+        return [
+            'peringkatKondisiPohonChartData' => $formatted->toArray()
+        ];
+    }
+
+
+    /**
+     * Data peringkat pemeliharaan (chart peringkatPemeliharaanChart)
+     */
+    public static function formatPemeliharaanData(Collection $data): array
+    {
+        $formatted = $data->map(function ($item) {
+            return [
+                'kebun' => $item->kebun,
+                'kacangan' => (float) $item->persen_tutupan_kacangan,
+                'pemeliharaan' => (float) $item->persen_pir_pkk_kurang_baik,
+                'tergenang' => (float) $item->persen_area_tergenang,
+                'anak_kayu' => (float) $item->kondisi_anak_kayu,
+            ];
+        })->values();
+
+        Log::info('✅ Formatted data pemeliharaan:', $formatted->toArray());
+
+        return [
+            'peringkatPemeliharaanChartData' => $formatted->toArray()
         ];
     }
 

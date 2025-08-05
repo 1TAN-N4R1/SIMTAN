@@ -31,28 +31,20 @@ class IndexController extends Controller
      */
     public function index()
     {
-        // Ambil data chart peringkat kondisi pohon
+        // Ambil semua data chart melalui ChartDataService
         $peringkatKondisiPohon = $this->chartService->getPeringkatKondisiPohonData();
-
-        // Ambil data chart peringkat kondisi pohon
         $peringkatPemeliharaan = $this->chartService->getPeringkatPemeliharaanData();
-
-        // Ambil data chart komposisi lahan
         $komposisiLahan = $this->chartService->getKomposisiLahanData();
-
-        // Ambil data chart luas areal tahun tanam
         $luasArealTahunTanam = $this->chartService->getLuasArealTahunTanamData();
-
-        // Ambil data chart luas areal tahun tanam per kebun
         $luasArealTahunTanamPerKebun = $this->chartService->getLuasArealTahunTanamPerKebunData();
 
-        // Gabungkan semua data dan kirim ke view index
+        // Gabungkan semua array associative menjadi satu array untuk dikirim ke view
         return view('index', array_merge(
             $peringkatKondisiPohon,
             $peringkatPemeliharaan,
             $komposisiLahan,
             $luasArealTahunTanam,
-            $luasArealTahunTanamPerKebun,
+            $luasArealTahunTanamPerKebun
         ));
     }
 }

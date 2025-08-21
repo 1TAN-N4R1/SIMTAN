@@ -107,6 +107,40 @@ class ExcelDataHelper
     }
 
     /**
+     * Data korelasi vegetatif (chart korelasiVegetatif)
+     */
+    public static function formatKorelasiVegetatifData(Collection $data): array
+    {
+        $labels = [];
+        $lingkarBatang = [];
+        $jumlahPelepah = [];
+        $panjangPelepah = [];
+
+        foreach ($data as $item) {
+            // Skip kalau semua nilai numerik null
+            if (
+                $item->lingkar_batang === null &&
+                $item->jumlah_pelepah === null &&
+                $item->panjang_pelepah === null
+            ) {
+                continue;
+            }
+
+            $labels[] = $item->kebun . ' - ' . $item->topografi;
+            $lingkarBatang[] = (float) $item->lingkar_batang;
+            $jumlahPelepah[] = (float) $item->jumlah_pelepah;
+            $panjangPelepah[] = (float) $item->panjang_pelepah;
+        }
+
+        return [
+            'korelasiVegetatifLabels' => $labels,
+            'korelasiVegetatifLingkarBatang' => $lingkarBatang,
+            'korelasiVegetatifJumlahPelepah' => $jumlahPelepah,
+            'korelasiVegetatifPanjangPelepah' => $panjangPelepah,
+        ];
+    }
+
+    /**
      * Data kondisi pohon (chart kondisiPohonChart)
      */
     public static function getKondisiPohonData(Collection $collection)

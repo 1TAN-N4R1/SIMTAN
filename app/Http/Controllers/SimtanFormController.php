@@ -27,19 +27,19 @@ class SimtanFormController extends Controller
             'file_upload' => 'required|file|mimes:xlsx,xls|max:2048',
         ]);
 
-        // ✅ Mapping prefix untuk kategori
         $prefixMap = [
             'Lokasi Kebun'      => 'LK',
             'Rekap TBM'         => 'RT',
             'Komposisi Lahan'   => 'KL',
             'Rincian TBM'       => 'RB',
             'Link Youtube'      => 'LY',
+            'Korelasi Vegetatif' => 'KV', 
         ];
 
         $kategori = $validated['kategori_file'];
         $prefix = $prefixMap[$kategori] ?? 'UK'; // Default UK jika tidak ada mapping
 
-        // ✅ Ambil kode terakhir untuk kategori ini
+        // Ambil kode terakhir untuk kategori ini
         $lastRecord = DB::table('simtan_forms')
             ->where('kategori_file', $kategori)
             ->orderByDesc('id')
@@ -51,14 +51,14 @@ class SimtanFormController extends Controller
             $lastNumber = isset($parts[1]) ? intval($parts[1]) : 0;
         }
 
-        // ✅ Buat kode baru
+        // Buat kode baru
         $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
         $kodeUpload = "{$prefix}-{$newNumber}";
 
-        // ✅ Tambahkan ke data yang akan disimpan
+        // Tambahkan ke data yang akan disimpan
         $validated['kode_upload'] = $kodeUpload;
 
-        // ✅ Simpan file & data melalui service
+        // Simpan file & data melalui service
         SimtanFormService::handleUpload($validated, $request->file('file_upload'));
 
         return redirect()->back()->with('success', "Form berhasil disimpan. Kode Upload: {$kodeUpload}");
@@ -75,6 +75,7 @@ class SimtanFormController extends Controller
             'Komposisi Lahan'   => 'KL',
             'Rincian TBM'       => 'RB',
             'Link Youtube'      => 'LY',
+            'Korelasi Vegetatif' => 'KV',
         ];
 
         $prefix = $prefixMap[$kategori] ?? 'UK';

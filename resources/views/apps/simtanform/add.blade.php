@@ -133,6 +133,7 @@
                         'Komposisi Lahan',
                         'Rincian TBM',
                         'Link Youtube',
+                        'Korelasi Vegetatif',
                     ],
 
                     handleFileUpload(event) {

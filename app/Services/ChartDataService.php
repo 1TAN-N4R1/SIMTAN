@@ -7,12 +7,26 @@ use App\Models\KomposisiLahan;
 use App\Models\DetailAreal;
 use App\Models\LokasiKebun;
 use App\Models\LinkKebunTBM;
+use App\Models\KorelasiVegetatif;
 use App\Helpers\ExcelDataHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class ChartDataService
 {
+    /**
+     * Chart: Komposisi Lahan
+     */
+    public function getKomposisiLahanData()
+    {
+        $komposisi = KomposisiLahan::select('label', 'persentase')->get();
+
+        return [
+            'komposisiLabels' => $komposisi->pluck('label'),
+            'komposisiSeries' => $komposisi->pluck('persentase')->map(fn($v) => round($v, 2)),
+        ];
+    }
+
     /**
      * Chart: Peringkat Kondisi Pohon
      */
@@ -54,17 +68,17 @@ class ChartDataService
         return ExcelDataHelper::formatPemeliharaanData($data);
     }
 
-    /**
-     * Chart: Komposisi Lahan
-     */
-    public function getKomposisiLahanData()
-    {
-        $komposisi = KomposisiLahan::select('label', 'persentase')->get();
 
-        return [
-            'komposisiLabels' => $komposisi->pluck('label'),
-            'komposisiSeries' => $komposisi->pluck('persentase')->map(fn($v) => round($v, 2)),
-        ];
+    /**
+     * Chart: Korelasi Vegetatif
+     */
+    public function getKorelasiVegetatifChartData()
+    {
+        $data = KorelasiVegetatif::orderBy('kebun')
+            ->orderBy('tahun', 'desc')
+            ->get();
+
+        return ExcelDataHelper::formatKorelasiVegetatifData($data);
     }
 
     /**

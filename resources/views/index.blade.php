@@ -68,6 +68,25 @@
             </div>
         </div>
 
+        <div class="relative">
+            <div class="panel h-full xl:col-span-2">
+                <div class="flex items-center dark:text-white-light mb-5">
+                    <h5 class="font-semibold text-lg">Korelasi Vegetatif</h5>
+                </div>
+
+                <div class="overflow-hidden">
+                    <div x-ref="korelasiVegetatifChart" class="w-[1500px] min-w-[900px]"></div>
+                </div>
+            </div>
+
+            <!-- Loader -->
+            <div x-show="loading"
+                class="absolute inset-0 z-10 grid place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+                <span
+                    class="animate-spin border-2 border-black dark:border-white !border-l-transparent rounded-full w-5 h-5 inline-flex">
+                </span>
+            </div>
+        </div>
 
 
         <div class="panel h-[900px] xl:col-span-2">
@@ -962,6 +981,16 @@
             };
         }
 
+        const korelasiVegetatifLabels = @json($korelasiVegetatifLabels);
+        const korelasiVegetatifLingkarBatang = @json($korelasiVegetatifLingkarBatang);
+        const korelasiVegetatifJumlahPelepah = @json($korelasiVegetatifJumlahPelepah);
+        const korelasiVegetatifPanjangPelepah = @json($korelasiVegetatifPanjangPelepah);
+
+        console.log(korelasiVegetatifLabels);
+        console.log(korelasiVegetatifLingkarBatang);
+        console.log(korelasiVegetatifJumlahPelepah);
+        console.log(korelasiVegetatifPanjangPelepah);
+
         const komposisiLabels = @json($komposisiLabels);
         const komposisiSeries = @json($komposisiSeries);
 
@@ -975,9 +1004,10 @@
     <script>
         document.addEventListener("alpine:init", () => {
             Alpine.data("dashboardCharts", () => ({
+                komposisiLahanChart: null,
                 peringkatKondisiPohonChart: null,
                 peringkatPemeliharaanChart: null,
-                komposisiLahanChart: null,
+                korelasiVegetatifChart: null,
                 luasArealTahunTanamChart: null,
                 luasArealTahunTanamPerKebunChart: null,
                 dailykomposisiLahanChart: null,
@@ -1027,6 +1057,12 @@
                             });
                         }
 
+                        this.korelasiVegetatifChart = new ApexCharts(this.$refs
+                            .korelasiVegetatifChart, this
+                            .korelasiVegetatifChartOptions);
+                        this.$refs.korelasiVegetatifChart.innerHTML = "";
+                        this.korelasiVegetatifChart.render();
+
                         this.komposisiLahanChart = new ApexCharts(this.$refs
                             .komposisiLahanChart, this
                             .komposisiLahanChartOptions);
@@ -1064,6 +1100,8 @@
                             .peringkatKondisiPohonChartOptions);
                         this.peringkatPemeliharaanChart.updateOptions(this
                             .peringkatPemeliharaanChartOptions);
+                        this.korelasiVegetatifChart.updateOptions(this
+                            .korelasiVegetatifChartOptions);
                         this.komposisiLahanChart.updateOptions(this.komposisiLahanChartOptions);
                         this.luasArealTahunTanamChart.updateOptions(this
                             .luasArealTahunTanamChartOptions);
@@ -1418,6 +1456,120 @@
                                 fontSize: '13px'
                             }
                         }
+                    };
+                },
+
+                get korelasiVegetatifChartOptions() {
+                    return {
+                        series: [{
+                                name: 'Lingkar Batang',
+                                data: korelasiVegetatifLingkarBatang
+                            },
+                            {
+                                name: 'Jumlah Pelepah',
+                                data: korelasiVegetatifJumlahPelepah
+                            },
+                            {
+                                name: 'Panjang Pelepah',
+                                data: korelasiVegetatifPanjangPelepah
+                            }
+                        ],
+                        chart: {
+                            type: 'bar',
+                            height: 420,
+                            toolbar: {
+                                show: true
+                            },
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 800
+                            }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: false,
+                                columnWidth: '45%',
+                                borderRadius: 6,
+                                dataLabels: {
+                                    position: 'top'
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: val => val.toFixed(2),
+                            offsetY: -12,
+                            style: {
+                                fontSize: '12px',
+                                colors: ['#333']
+                            },
+                            background: {
+                                enabled: true,
+                                foreColor: '#fff',
+                                padding: 4,
+                                borderRadius: 4
+                            }
+                        },
+                        xaxis: {
+                            categories: korelasiVegetatifLabels,
+                            title: {
+                                text: 'Kebun - Topografi',
+                                style: {
+                                    fontWeight: 600
+                                }
+                            },
+                            labels: {
+                                rotate: -45,
+                                style: {
+                                    fontSize: '12px'
+                                }
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Nilai',
+                                style: {
+                                    fontWeight: 600
+                                }
+                            },
+                            labels: {
+                                formatter: val => val.toFixed(2)
+                            }
+                        },
+                        grid: {
+                            borderColor: '#e0e0e0',
+                            strokeDashArray: 4
+                        },
+                        colors: ['#FFA500', '#FF6347', '#DC143C'],
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'center',
+                            floating: false,
+                            markers: {
+                                radius: 12
+                            }
+                        },
+                        tooltip: {
+                            shared: true,
+                            intersect: false,
+                            y: {
+                                formatter: val => val.toFixed(2)
+                            }
+                        },
+                        responsive: [{
+                            breakpoint: 768,
+                            options: {
+                                xaxis: {
+                                    labels: {
+                                        rotate: -30
+                                    }
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }]
                     };
                 },
 

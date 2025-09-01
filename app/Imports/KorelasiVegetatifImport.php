@@ -56,13 +56,18 @@ class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipl
             $topografi = $this->keepString($row[2] ?? null) ?: $lastTopografi;
             $blok      = $this->keepString($row[3] ?? null) ?: $lastBlok;
 
+            // Jika topografi RATA-RATA, blok harus null
+            if (strtoupper($topografi) === 'RATA-RATA') {
+                $blok = null;
+            }
+
             // Kolom angka
             $keliling_crown  = $this->sanitizeDesimal($row[4] ?? null);
             $lingkar_batang  = $this->sanitizeDesimal($row[5] ?? null);
             $jumlah_pelepah  = $this->sanitizeDesimal($row[6] ?? null);
             $panjang_pelepah = $this->sanitizeDesimal($row[7] ?? null);
 
-            // Simpan nilai terakhir jika kolom tidak kosong
+            // Simpan nilai terakhir jika kolom tidak kosong dan bukan RATA-RATA untuk blok
             if (!empty($tahun))     $lastTahun     = $tahun;
             if (!empty($kebun))     $lastKebun     = $kebun;
             if (!empty($topografi)) $lastTopografi = $topografi;

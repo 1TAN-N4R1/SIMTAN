@@ -37,14 +37,6 @@ class ChartDataService
             ->orderByDesc('persen_pkk_normal')
             ->get(['kebun', 'persen_pkk_normal', 'persen_pkk_non_valuer', 'persen_pkk_mati']);
 
-        Log::info('🔍 Data kondisi pohon:', $data->map(function ($item) {
-            return [
-                'kebun' => $item->kebun,
-                'normal' => $item->persen_pkk_normal,
-            ];
-        })->toArray());
-
-        // Kirim ke helper untuk formatting data
         return ExcelDataHelper::formatKondisiPohonData($data);
     }
 
@@ -57,14 +49,6 @@ class ChartDataService
         $data = DetailRekap::where('is_total', true)
             ->orderByDesc('persen_tutupan_kacangan')
             ->get(['kebun', 'persen_tutupan_kacangan', 'persen_pir_pkk_kurang_baik', 'persen_area_tergenang', 'kondisi_anak_kayu']);
-
-        Log::info('📊 Data pemeliharaan:', $data->map(function ($item) {
-            return [
-                'kebun' => $item->kebun,
-                'kacangan' => $item->persen_tutupan_kacangan,
-            ];
-        })->toArray());
-
         return ExcelDataHelper::formatPemeliharaanData($data);
     }
 
@@ -74,9 +58,7 @@ class ChartDataService
      */
     public function getKorelasiVegetatifChartData()
     {
-        $data = KorelasiVegetatif::orderBy('kebun')
-            ->orderBy('tahun', 'desc')
-            ->get();
+        $data = KorelasiVegetatif::get();
 
         return ExcelDataHelper::formatKorelasiVegetatifData($data);
     }

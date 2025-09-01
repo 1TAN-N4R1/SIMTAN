@@ -914,7 +914,6 @@
             .non_valuer);
         const persen_pkk_mati = peringkatKondisiPohonChartData.map(item => item.mati);
 
-        // Simpan semua data asli
         const allKondisiData = peringkatKondisiPohonChartData.map(item => ({
             kebun: item.kebun,
             normal: item.normal,
@@ -986,10 +985,56 @@
         const korelasiVegetatifJumlahPelepah = @json($korelasiVegetatifJumlahPelepah);
         const korelasiVegetatifPanjangPelepah = @json($korelasiVegetatifPanjangPelepah);
 
-        console.log(korelasiVegetatifLabels);
-        console.log(korelasiVegetatifLingkarBatang);
-        console.log(korelasiVegetatifJumlahPelepah);
-        console.log(korelasiVegetatifPanjangPelepah);
+        const allVegetatifData = korelasiVegetatifLabels.map((label, idx) => ({
+            kebun: label,
+            lingkar_batang: korelasiVegetatifLingkarBatang[idx],
+            jumlah_pelepah: korelasiVegetatifJumlahPelepah[idx],
+            panjang_pelepah: korelasiVegetatifPanjangPelepah[idx],
+        }));
+
+        console.log("All Vegetatif Data:", allVegetatifData);
+
+        // Helper untuk sorted series berdasarkan field
+        function getSortedVegetatifSeries(byField) {
+            const sorted = [...allVegetatifData].sort((a, b) => b[byField] - a[byField]);
+            return {
+                categories: sorted.map(d => d.kebun),
+                series: [{
+                        name: 'Lingkar Batang',
+                        data: sorted.map(d => d.lingkar_batang)
+                    },
+                    {
+                        name: 'Jumlah Pelepah',
+                        data: sorted.map(d => d.jumlah_pelepah)
+                    },
+                    {
+                        name: 'Panjang Pelepah',
+                        data: sorted.map(d => d.panjang_pelepah)
+                    }
+                ]
+            };
+        }
+
+        function getVegetatifSeries() {
+            return {
+                categories: allVegetatifData.map(d => d.kebun),
+                series: [{
+                        name: 'Lingkar Batang',
+                        data: allVegetatifData.map(d => d.lingkar_batang)
+                    },
+                    {
+                        name: 'Jumlah Pelepah',
+                        data: allVegetatifData.map(d => d.jumlah_pelepah)
+                    },
+                    {
+                        name: 'Panjang Pelepah',
+                        data: allVegetatifData.map(d => d.panjang_pelepah)
+                    }
+                ]
+            };
+        }
+
+        const vegetatifData = getVegetatifSeries();
 
         const komposisiLabels = @json($komposisiLabels);
         const komposisiSeries = @json($komposisiSeries);
@@ -1461,70 +1506,85 @@
 
                 get korelasiVegetatifChartOptions() {
                     return {
-                        series: [{
-                                name: 'Lingkar Batang',
-                                data: korelasiVegetatifLingkarBatang
-                            },
-                            {
-                                name: 'Jumlah Pelepah',
-                                data: korelasiVegetatifJumlahPelepah
-                            },
-                            {
-                                name: 'Panjang Pelepah',
-                                data: korelasiVegetatifPanjangPelepah
-                            }
-                        ],
+                        series: vegetatifData.series,
                         chart: {
                             type: 'bar',
-                            height: 420,
-                            toolbar: {
-                                show: true
+                            height: 600,
+                            width: '100%',
+                            stacked: false,
+                            events: {
+                                legendClick: function(chartContext, seriesIndex) {
+                                    const fieldMap = ['lingkar_batang', 'jumlah_pelepah',
+                                        'panjang_pelepah'
+                                    ];
+                                    const selectedField = fieldMap[seriesIndex];
+                                    const {
+                                        categories,
+                                        series
+                                    } = getSortedVegetatifSeries(selectedField);
+                                    chartContext.updateOptions({
+                                        xaxis: {
+                                            categories
+                                        },
+                                        series
+                                    });
+                                    return false;
+                                }
                             },
+                            toolbar: {
+                                show: true,
+                                offsetX: -20,
+                                tools: {
+                                    download: true,
+                                    selection: true,
+                                    zoom: false,
+                                    zoomin: false,
+                                    zoomout: false,
+                                    pan: false,
+                                    reset: true
+                                }
+                            },
+                            fontFamily: 'Inter, sans-serif',
                             animations: {
                                 enabled: true,
                                 easing: 'easeinout',
-                                speed: 800
+                                speed: 700
                             }
                         },
                         plotOptions: {
                             bar: {
                                 horizontal: false,
-                                columnWidth: '45%',
-                                borderRadius: 6,
+                                columnWidth: '55%',
+                                borderRadius: 4,
                                 dataLabels: {
                                     position: 'top'
                                 }
                             }
                         },
                         dataLabels: {
-                            enabled: true,
-                            formatter: val => val.toFixed(2),
-                            offsetY: -12,
-                            style: {
-                                fontSize: '12px',
-                                colors: ['#333']
-                            },
-                            background: {
-                                enabled: true,
-                                foreColor: '#fff',
-                                padding: 4,
-                                borderRadius: 4
-                            }
+                            enabled: false
                         },
                         xaxis: {
-                            categories: korelasiVegetatifLabels,
+                            categories: vegetatifData.categories,
+                            labels: {
+                                rotate: -45,
+                                style: {
+                                    fontSize: '10px',
+                                    fontWeight: 500
+                                },
+                                formatter: val => {
+                                    if (!val) return "";
+                                    let parts = val.split("|").map(p => p.trim());
+                                    return parts.join(" → ");
+                                }
+                            },
                             title: {
-                                text: 'Kebun - Topografi',
+                                text: 'Tahun - Kebun - Topografi - Blok',
                                 style: {
                                     fontWeight: 600
                                 }
                             },
-                            labels: {
-                                rotate: -45,
-                                style: {
-                                    fontSize: '12px'
-                                }
-                            }
+                            tickPlacement: 'on'
                         },
                         yaxis: {
                             title: {
@@ -1534,27 +1594,42 @@
                                 }
                             },
                             labels: {
-                                formatter: val => val.toFixed(2)
+                                formatter: val => val.toFixed(3)
                             }
                         },
                         grid: {
                             borderColor: '#e0e0e0',
-                            strokeDashArray: 4
+                            strokeDashArray: 4,
+                            padding: {
+                                left: 10,
+                                right: 10,
+                                top: 10,
+                                bottom: 10
+                            }
                         },
-                        colors: ['#FFA500', '#FF6347', '#DC143C'],
+                        colors: ['#1E90FF', '#32CD32', '#FF8C00'],
                         legend: {
                             position: 'top',
                             horizontalAlign: 'center',
-                            floating: false,
+                            fontSize: '13px',
                             markers: {
+                                width: 12,
+                                height: 12,
                                 radius: 12
+                            },
+                            itemMargin: {
+                                horizontal: 10,
+                                vertical: 4
                             }
                         },
                         tooltip: {
                             shared: true,
                             intersect: false,
                             y: {
-                                formatter: val => val.toFixed(2)
+                                formatter: val => `${parseFloat(val).toFixed(3)}`
+                            },
+                            style: {
+                                fontSize: '13px'
                             }
                         },
                         responsive: [{
@@ -1572,6 +1647,120 @@
                         }]
                     };
                 },
+
+                // get korelasiVegetatifChartOptions() {
+                //     return {
+                //         series: [{
+                //                 name: 'Lingkar Batang',
+                //                 data: korelasiVegetatifLingkarBatang
+                //             },
+                //             {
+                //                 name: 'Jumlah Pelepah',
+                //                 data: korelasiVegetatifJumlahPelepah
+                //             },
+                //             {
+                //                 name: 'Panjang Pelepah',
+                //                 data: korelasiVegetatifPanjangPelepah
+                //             }
+                //         ],
+                //         chart: {
+                //             type: 'bar',
+                //             height: 420,
+                //             toolbar: {
+                //                 show: true
+                //             },
+                //             animations: {
+                //                 enabled: true,
+                //                 easing: 'easeinout',
+                //                 speed: 800
+                //             }
+                //         },
+                //         plotOptions: {
+                //             bar: {
+                //                 horizontal: false,
+                //                 columnWidth: '45%',
+                //                 borderRadius: 6,
+                //                 dataLabels: {
+                //                     position: 'top'
+                //                 }
+                //             }
+                //         },
+                //         dataLabels: {
+                //             enabled: true,
+                //             formatter: val => val.toFixed(2),
+                //             offsetY: -12,
+                //             style: {
+                //                 fontSize: '12px',
+                //                 colors: ['#333']
+                //             },
+                //             background: {
+                //                 enabled: true,
+                //                 foreColor: '#fff',
+                //                 padding: 4,
+                //                 borderRadius: 4
+                //             }
+                //         },
+                //         xaxis: {
+                //             categories: korelasiVegetatifLabels,
+                //             title: {
+                //                 text: 'Kebun - Topografi',
+                //                 style: {
+                //                     fontWeight: 600
+                //                 }
+                //             },
+                //             labels: {
+                //                 rotate: -45,
+                //                 style: {
+                //                     fontSize: '10px'
+                //                 }
+                //             }
+                //         },
+                //         yaxis: {
+                //             title: {
+                //                 text: 'Nilai',
+                //                 style: {
+                //                     fontWeight: 600
+                //                 }
+                //             },
+                //             labels: {
+                //                 formatter: val => val.toFixed(2)
+                //             }
+                //         },
+                //         grid: {
+                //             borderColor: '#e0e0e0',
+                //             strokeDashArray: 4
+                //         },
+                //         colors: ['#FFA500', '#FF6347', '#DC143C'],
+                //         legend: {
+                //             position: 'top',
+                //             horizontalAlign: 'center',
+                //             floating: false,
+                //             markers: {
+                //                 radius: 12
+                //             }
+                //         },
+                //         tooltip: {
+                //             shared: true,
+                //             intersect: false,
+                //             y: {
+                //                 formatter: val => val.toFixed(2)
+                //             }
+                //         },
+                //         responsive: [{
+                //             breakpoint: 768,
+                //             options: {
+                //                 xaxis: {
+                //                     labels: {
+                //                         rotate: -30
+                //                     }
+                //                 },
+                //                 legend: {
+                //                     position: 'bottom'
+                //                 }
+                //             }
+                //         }]
+                //     };
+                // },
 
                 get komposisiLahanChartOptions() {
                     return {

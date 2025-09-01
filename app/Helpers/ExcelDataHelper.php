@@ -76,8 +76,6 @@ class ExcelDataHelper
             ];
         })->values();
 
-        Log::info('✅ Formatted data:', $formatted->toArray());
-
         return [
             'peringkatKondisiPohonChartData' => $formatted->toArray()
         ];
@@ -99,8 +97,6 @@ class ExcelDataHelper
             ];
         })->values();
 
-        Log::info('✅ Formatted data pemeliharaan:', $formatted->toArray());
-
         return [
             'peringkatPemeliharaanChartData' => $formatted->toArray()
         ];
@@ -117,7 +113,6 @@ class ExcelDataHelper
         $panjangPelepah = [];
 
         foreach ($data as $item) {
-            // Skip kalau semua nilai numerik null
             if (
                 $item->lingkar_batang === null &&
                 $item->jumlah_pelepah === null &&
@@ -126,10 +121,36 @@ class ExcelDataHelper
                 continue;
             }
 
-            $labels[] = $item->kebun . ' - ' . $item->topografi;
+            // Bentuk label sesuai format yang diinginkan
+            $labelParts = [];
+            if (!empty($item->tahun)) {
+                $labelParts[] = $item->tahun;
+            }
+            if (!empty($item->tbm)) {
+                $labelParts[] = $item->tbm; 
+            }
+            if (!empty($item->kebun)) {
+                $labelParts[] = $item->kebun;
+            }
+            if (!empty($item->topografi)) {
+                $labelParts[] = $item->topografi; 
+            }
+            if (!empty($item->blok)) {
+                $labelParts[] = $item->blok;
+            }
+
+            $labels[] = implode(' - ', $labelParts);
+
             $lingkarBatang[] = (float) $item->lingkar_batang;
             $jumlahPelepah[] = (float) $item->jumlah_pelepah;
             $panjangPelepah[] = (float) $item->panjang_pelepah;
+
+            Log::info('Korelasi Vegetatif Item', [
+                'label' => $labels,
+                'lingkar_batang' => $item->lingkar_batang,
+                'jumlah_pelepah' => $item->jumlah_pelepah,
+                'panjang_pelepah' => $item->panjang_pelepah,
+            ]);
         }
 
         return [
